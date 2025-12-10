@@ -1,17 +1,18 @@
 <template>
   <div class="palette-editor">
-    <!-- HEADER -->
+    <!-- Заголовок -->
     <div class="editor-header">
-      <h1>✏️ Редактор палитры</h1>
-      <p style="color: #fff">Создавайте и редактируйте идеальные цветовые схемы</p>
+      <h1>Редактор палитры</h1>
+      <p>Создавайте и редактируйте идеальные цветовые схемы</p>
     </div>
 
+    <!-- Основной контейнер -->
     <div class="editor-container">
-      <!-- LEFT SIDEBAR -->
+      <!-- Боковая панель -->
       <div class="editor-sidebar">
         <h3>Инструменты</h3>
 
-        <!-- PALETTE TYPES -->
+        <!-- Тип палитры -->
         <div class="tool-section">
           <h4>Тип палитры</h4>
           <div class="palette-types">
@@ -22,12 +23,12 @@
                 :class="{ active: selectedType.id === type.id }"
                 @click="selectPaletteType(type)"
             >
-              {{ type.icon }} {{ type.name }}
+              {{ type.name }}
             </button>
           </div>
         </div>
 
-        <!-- SETTINGS -->
+        <!-- Настройки -->
         <div class="tool-section">
           <h4>Настройки</h4>
 
@@ -42,23 +43,20 @@
           </label>
 
           <div class="range-group">
-            <label>Насыщенность</label>
-            <input type="range" v-model="settings.saturation" min="0" max="100">
-            <span>{{ settings.saturation }}%</span>
+            <label>Насыщенность: {{ settings.saturation }}%</label>
+            <input type="range" v-model="settings.saturation" min="0" max="100" @input="applySettings">
           </div>
 
           <div class="range-group">
-            <label>Яркость</label>
-            <input type="range" v-model="settings.lightness" min="0" max="100">
-            <span>{{ settings.lightness }}%</span>
+            <label>Яркость: {{ settings.lightness }}%</label>
+            <input type="range" v-model="settings.lightness" min="0" max="100" @input="applySettings">
           </div>
         </div>
       </div>
 
-      <!-- MAIN AREA -->
+      <!-- Основная область -->
       <div class="editor-main">
-
-        <!-- PALETTE GRID -->
+        <!-- Сетка цветов -->
         <div class="color-canvas">
           <div
               v-for="(color, index) in paletteColors"
@@ -69,31 +67,67 @@
           >
             <div class="color-info">
               <span class="color-hex">{{ color }}</span>
-
               <div class="color-actions">
-                <button @click.stop="toggleLock(index)" class="canvas-action-btn">
-                  {{ lockedColors[index] ? '🔒' : '🔓' }}
+                <button @click.stop="toggleLock(index)" class="canvas-action-btn" :title="lockedColors[index] ? 'Разблокировать' : 'Заблокировать'">
+                  <svg v-if="lockedColors[index]" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M16 8V6C16 3.79086 14.2091 2 12 2C9.79086 2 8 3.79086 8 6V8M5 10H19C20.1046 10 21 10.8954 21 12V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V12C3 10.8954 3.89543 10 5 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M16 8V6C16 3.79086 14.2091 2 12 2C9.79086 2 8 3.79086 8 6V8M5 10H19C20.1046 10 21 10.8954 21 12V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V12C3 10.8954 3.89543 10 5 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
                 </button>
-
-                <button @click.stop="removeColor(index)" class="canvas-action-btn">
-                  🗑️
+                <button @click.stop="removeColor(index)" class="canvas-action-btn" title="Удалить">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 6H21M10 11V17M14 11V17M5 6L6 19C6 19.5304 6.21071 20.0391 6.58579 20.4142C6.96086 20.7893 7.46957 21 8 21H16C16.5304 21 17.0391 20.7893 17.4142 20.4142C17.7893 20.0391 18 19.5304 18 19L19 6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
                 </button>
               </div>
             </div>
           </div>
-
-          <button class="add-canvas-color" @click="addColor">+</button>
+          <button class="add-canvas-color" @click="addColor" title="Добавить цвет">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
         </div>
 
-        <!-- PALETTE ACTIONS -->
+        <!-- Кнопки действий -->
         <div class="editor-actions">
-          <button @click="generatePalette" class="btn btn-primary">🎲 Сгенерировать</button>
-          <button @click="savePalette" class="btn btn-success">💾 Сохранить</button>
-          <button @click="resetPalette" class="btn btn-secondary">🔄 Сбросить</button>
-          <button @click="exportPalette" class="btn btn-info">📤 Экспорт</button>
+          <button @click="generatePalette" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 8px">
+              <path d="M15 7C15 4.23858 12.7614 2 10 2C7.23858 2 5 4.23858 5 7C5 9.76142 7.23858 12 10 12C12.7614 12 15 9.76142 15 7Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M19 19C19 16.2386 16.7614 14 14 14C11.2386 14 9 16.2386 9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Сгенерировать
+          </button>
+          <button @click="savePalette" class="btn btn-success">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 8px">
+              <path d="M19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H14L21 10V19C21 20.1046 20.1046 21 19 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M17 21V13H7V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M7 3V9H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Сохранить
+          </button>
+          <button @click="resetPalette" class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 8px">
+              <path d="M2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M15 9L9 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M9 9L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Сбросить
+          </button>
+          <button @click="exportPalette" class="btn btn-info">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 8px">
+              <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Экспорт
+          </button>
         </div>
 
-        <!-- PREVIEW -->
+        <!-- Предпросмотр -->
         <div class="palette-preview">
           <h3>Предпросмотр</h3>
           <div class="preview-elements">
@@ -110,7 +144,7 @@
       </div>
     </div>
 
-    <!-- MODAL COLOR PICKER -->
+    <!-- Модальное окно выбора цвета -->
     <div v-if="activeColorIndex !== null" class="color-modal">
       <div class="modal-content">
         <ColorPicker
@@ -121,7 +155,6 @@
         />
       </div>
     </div>
-
   </div>
 </template>
 
@@ -143,16 +176,15 @@ export default {
 
     const selectedType = ref({
       id: 'analogous',
-      name: 'Аналогичная',
-      icon: '🎨'
+      name: 'Аналогичная'
     })
 
     const paletteTypes = [
-      { id: 'analogous', name: 'Аналогичная', icon: '🎨' },
-      { id: 'monochromatic', name: 'Монохромная', icon: '⚫' },
-      { id: 'triadic', name: 'Триадная', icon: '🔺' },
-      { id: 'complementary', name: 'Комплементарная', icon: '🔄' },
-      { id: 'random', name: 'Случайная', icon: '🎲' }
+      { id: 'analogous', name: 'Аналогичная' },
+      { id: 'monochromatic', name: 'Монохромная' },
+      { id: 'triadic', name: 'Триадная' },
+      { id: 'complementary', name: 'Комплементарная' },
+      { id: 'random', name: 'Случайная' }
     ]
 
     const settings = ref({
@@ -255,16 +287,14 @@ export default {
       return hslToHex(hsl.h, hsl.s, Math.max(0, hsl.l - amount))
     }
 
-    const adjustSaturation = (hex, slider) => {
+    const adjustSaturation = (hex, targetSaturation) => {
       const hsl = hexToHsl(hex)
-      const mult = slider / 50
-      return hslToHex(hsl.h, Math.min(100, Math.round(hsl.s * mult)), hsl.l)
+      return hslToHex(hsl.h, targetSaturation, hsl.l)
     }
 
-    const adjustLightness = (hex, slider) => {
+    const adjustLightness = (hex, targetLightness) => {
       const hsl = hexToHsl(hex)
-      const delta = slider - 50
-      return hslToHex(hsl.h, hsl.s, Math.max(0, Math.min(100, hsl.l + delta)))
+      return hslToHex(hsl.h, hsl.s, targetLightness)
     }
 
     /* ========================
@@ -292,63 +322,101 @@ export default {
     =========================== */
 
     const generatePalette = () => {
-      const base = baseColor.value
+
+      const generateRandomBaseColor = () => randomHex()
+
+      let base
+      if (selectedType.value.id === 'random') {
+        // Для случайной палитры base не используется, но на всякий случай
+        base = generateRandomBaseColor()
+      } else {
+        // Для всех остальных типов используем случайный цвет как базу
+        base = generateRandomBaseColor()
+      }
+
       const result = []
+      const type = selectedType.value.id
 
-      const TYPE = selectedType.value.id
+      if (type === 'analogous') {
+        // Аналогичная: цвета с шагом 30 градусов
+        result.push(base)
+        result.push(shiftHue(base, 30))
+        result.push(shiftHue(base, 60))
+        result.push(shiftHue(base, 90))
+        result.push(shiftHue(base, 120))
 
-      const types = {
-        analogous() {
-          ;[0, 30, 60, 90, 120].forEach(deg =>
-              result.push(shiftHue(base, deg))
-          )
-        },
-        monochromatic() {
-          result.push(
-              lightenColor(base, 20),
-              lightenColor(base, 40),
-              base,
-              darkenColor(base, 20),
-              darkenColor(base, 40)
-          )
-        },
-        complementary() {
-          result.push(
-              base,
-              shiftHue(base, 180),
-              shiftHue(base, 90),
-              shiftHue(base, -90),
-              lightenColor(base, 20)
-          )
-        },
-        triadic() {
-          result.push(
-              base,
-              shiftHue(base, 120),
-              shiftHue(base, 240),
-              shiftHue(base, 60),
-              shiftHue(base, 180)
-          )
-        },
-        random() {
-          for (let i = 0; i < 5; i++) result.push(randomHex())
+      } else if (type === 'monochromatic') {
+        // Монохромная: разные оттенки яркости
+        result.push(adjustLightness(base, 80)) // самый светлый
+        result.push(adjustLightness(base, 60))
+        result.push(base) // базовый
+        result.push(adjustLightness(base, 40))
+        result.push(adjustLightness(base, 20)) // самый темный
+
+      } else if (type === 'triadic') {
+        // Триадная: 120 градусов
+        result.push(base)
+        result.push(shiftHue(base, 120))
+        result.push(shiftHue(base, 240))
+        result.push(adjustLightness(base, 70))
+        result.push(adjustLightness(base, 30))
+
+      } else if (type === 'complementary') {
+        // Комплементарная: противоположные + соседние
+        result.push(base)
+        result.push(shiftHue(base, 180)) // противоположный
+        result.push(shiftHue(base, 150)) // смежный
+        result.push(shiftHue(base, 210)) // смежный
+        result.push(adjustLightness(base, 70)) // светлый вариант
+
+      } else if (type === 'random') {
+        // Случайная
+        for (let i = 0; i < 5; i++) {
+          result.push(randomHex())
         }
       }
 
-      types[TYPE]()
+      // Применяем настройки к каждому цвету (кроме заблокированных)
+      paletteColors.value = result.map((color, i) => {
+        if (lockedColors.value[i] && i < paletteColors.value.length) {
+          return paletteColors.value[i]
+        }
 
-      paletteColors.value = result.map((c, i) =>
-          lockedColors.value[i] ? paletteColors.value[i] : processColor(c)
-      )
+        // Применяем контраст если включен
+        let processedColor = color
+        if (settings.value.contrast) {
+          const hsl = hexToHsl(processedColor)
+          if (hsl.l > 60) {
+            processedColor = adjustLightness(processedColor, Math.max(0, hsl.l - 20))
+          } else {
+            processedColor = adjustLightness(processedColor, Math.min(100, hsl.l + 20))
+          }
+        }
+
+        return processedColor
+      })
+    }
+
+    const applySettings = () => {
+      if (settings.value.autoRegenerate) {
+        generatePalette()
+      } else {
+        // Применяем настройки только к текущей палитре
+        paletteColors.value = paletteColors.value.map(color => {
+          let newColor = color
+          if (settings.value.saturation !== 60) {
+            newColor = adjustSaturation(newColor, settings.value.saturation)
+          }
+          if (settings.value.lightness !== 50) {
+            newColor = adjustLightness(newColor, settings.value.lightness)
+          }
+          return newColor
+        })
+      }
     }
 
     /* AUTO REGENERATE */
     watch(settings, generatePalette, { deep: true })
-
-    /* ========================
-       IMPORTANT!!!
-       selectPaletteType FIXED
-    =========================== */
 
     const selectPaletteType = (type) => {
       selectedType.value = type
@@ -426,7 +494,7 @@ export default {
       settings,
       activeColorIndex,
 
-      selectPaletteType,  // ← ВАЖНО — ФУНКЦИЯ ВОЗВРАЩАЕТСЯ
+      selectPaletteType,
       generatePalette,
       addColor,
       removeColor,
@@ -436,397 +504,479 @@ export default {
       exportPalette,
 
       openColorPicker,
-      closeColorPicker
+      closeColorPicker,
+      applySettings
     }
   }
-
 }
 </script>
+
 <style scoped>
-
-/* чуть больше отступа у заголовков */
-.editor-sidebar h3,
-.tool-section h4,
-.range-group label,
-.checkbox-option,
-.editor-header p {
-  padding-left: 6px;
-}
-
-/* ————————————————————————————— */
-/* LAYOUT */
-/* ————————————————————————————— */
-
+/* ===== ОСНОВНЫЕ СТИЛИ ===== */
 .palette-editor {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 30px 20px;
-  color: #000; /* БАЗОВЫЙ ЧЁРНЫЙ ТЕКСТ */
+  padding: 2rem 1.5rem;
 }
 
+/* ===== ЗАГОЛОВОК ===== */
 .editor-header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 2.5rem;
 }
 
 .editor-header h1 {
-  font-size: 2.4rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
 }
 
 .editor-header p {
-  opacity: 0.7;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+  line-height: 1.5;
 }
 
-/* GRID */
+/* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
 .editor-container {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 30px;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1024px) {
   .editor-container {
     grid-template-columns: 1fr;
   }
 }
 
-/* ————————————————————————————— */
-/* SIDEBAR */
-/* ————————————————————————————— */
-
+/* ===== БОКОВАЯ ПАНЕЛЬ ===== */
 .editor-sidebar {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  color: inherit;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  height: fit-content;
+}
+
+.editor-sidebar h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1.5rem 0;
 }
 
 .tool-section {
-  margin-bottom: 32px;
+  margin-bottom: 2rem;
 }
 
+.tool-section h4 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+}
+
+/* Типы палитр */
 .palette-types {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.5rem;
 }
 
 .type-btn {
-  padding: 12px 16px;
-  background: #f7fafc;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  font-weight: 600;
-  color: #4a5568;
-  transition: 0.2s;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .type-btn:hover {
-  background: #edf2f7;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .type-btn.active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--accent-color);
   color: white;
-  border-color: transparent;
+  border-color: var(--accent-color);
 }
 
-/* CHECKBOXES */
+/* Чекбоксы */
 .checkbox-option {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
 }
 
+.checkbox-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-color);
+}
+
+/* Слайдеры */
 .range-group {
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
 }
 
-/* ————————————————————————————— */
-/* MAIN CANVAS */
-/* ————————————————————————————— */
+.range-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
 
+.range-group input[type="range"] {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border-color);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.range-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  cursor: pointer;
+  border: 2px solid var(--bg-primary);
+}
+
+.range-group span {
+  display: block;
+  text-align: right;
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+  margin-top: 0.25rem;
+}
+
+/* ===== ОСНОВНАЯ ОБЛАСТЬ ===== */
 .editor-main {
-  background: #ffffff;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  color: inherit;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
 }
 
+/* Сетка цветов */
 .color-canvas {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .canvas-color {
-  height: 200px;
-  border-radius: 12px;
   position: relative;
-  cursor: pointer;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  transition: 0.2s;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
 .canvas-color:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .color-info {
   position: absolute;
   bottom: 0;
-  width: 100%;
-  background: rgba(0,0,0,0.6);
-  padding: 12px;
-  color: white;
-  opacity: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 0.75rem;
   transform: translateY(100%);
-  transition: 0.2s;
+  transition: transform 0.2s ease;
 }
 
 .canvas-color:hover .color-info {
-  opacity: 1;
   transform: translateY(0);
+}
+
+.color-hex {
+  display: block;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  margin-bottom: 0.5rem;
 }
 
 .color-actions {
   display: flex;
-  gap: 10px;
+  gap: 0.5rem;
 }
 
-/* кнопки внутри карточки */
 .canvas-action-btn {
   flex: 1;
-  background: rgba(255,255,255,0.2);
+  padding: 0.375rem;
   border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
-  padding: 6px;
-  border-radius: 6px;
+  font-size: 0.875rem;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-/* ADD COLOR BUTTON */
+.canvas-action-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
 
+/* Кнопка добавления цвета */
 .add-canvas-color {
-  height: 200px;
-  border: 3px dashed #cbd5e0;
-  border-radius: 12px;
-  background: #f7fafc;
-  font-size: 3rem;
-  color: #a0aec0;
+  aspect-ratio: 1;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  font-size: 2rem;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.2s ease;
 }
 
 .add-canvas-color:hover {
-  background: #edf2f7;
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: var(--bg-secondary);
 }
 
-/* ————————————————————————————— */
-/* ACTION BUTTONS */
-/* ————————————————————————————— */
-
+/* ===== КНОПКИ ДЕЙСТВИЙ ===== */
 .editor-actions {
   display: flex;
-  gap: 16px;
-  margin-bottom: 30px;
+  gap: 1rem;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
 }
 
 .btn {
-  padding: 14px 24px;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.2s ease;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--accent-color);
   color: white;
+  border-color: var(--accent-color);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #48bb78, #38a169);
+  background: var(--success-color);
   color: white;
+  border-color: var(--success-color);
+}
+
+.btn-success:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: #e2e8f0;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
 .btn-info {
-  background: linear-gradient(135deg, #4299e1, #3182ce);
+  background: var(--info-color);
   color: white;
+  border-color: var(--info-color);
 }
 
-/* ————————————————————————————— */
-/* PREVIEW */
-/* ————————————————————————————— */
+.btn-info:hover {
+  background: var(--info-color-hover);
+  border-color: var(--info-color-hover);
+  transform: translateY(-1px);
+}
 
+/* ===== ПРЕДПРОСМОТР ===== */
 .palette-preview {
-  background: #f7fafc;
-  padding: 16px;
-  border-radius: 12px;
-  color: inherit;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+}
+
+.palette-preview h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
 }
 
 .preview-elements {
   display: flex;
-  gap: 20px;
+  gap: 1rem;
   flex-wrap: wrap;
+}
+
+.preview-element {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 80px;
 }
 
 .element-color {
   width: 60px;
   height: 60px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
 }
 
-/* ————————————————————————————— */
-/* MODAL */
-/* ————————————————————————————— */
+.element-label {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
 
+/* ===== МОДАЛЬНОЕ ОКНО ЦВЕТА ===== */
 .color-modal {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.4);
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1rem;
 }
 
 .modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 16px;
-}
-
-.range-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.range-group label {
-  font-weight: 600;
-  font-size: 0.95rem;
-  margin-bottom: -2px;
-}
-
-.range-group input[type="range"] {
-  -webkit-appearance: none;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  max-width: 400px;
   width: 100%;
-  height: 6px;
-  border-radius: 4px;
-  background: #d1d5db;
-  outline: none;
-  transition: background-color 0.2s ease;
 }
 
-/* Ползунок */
-.range-group input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 18px;
-  width: 18px;
-  border-radius: 50%;
-  background: #4f46e5; /* фиолетовый */
-  cursor: pointer;
-  transition: transform 0.15s ease;
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 768px) {
+  .palette-editor {
+    padding: 1.5rem 1rem;
+  }
+
+  .editor-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .color-canvas {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .editor-actions {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .preview-elements {
+    justify-content: center;
+  }
 }
 
-.range-group input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
+@media (max-width: 480px) {
+  .editor-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .editor-header p {
+    font-size: 0.9375rem;
+  }
+
+  .color-canvas {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .canvas-action-btn {
+    padding: 0.25rem;
+    font-size: 0.75rem;
+  }
+}
+</style>
+
+<style>
+/* Глобальные стили для редактора в темной теме */
+body.dark-theme .palette-editor .editor-sidebar,
+body.dark-theme .palette-editor .editor-main {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
 }
 
-.range-group span {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-top: -4px;
-}
-
-/* Тёмная тема */
-body.dark-theme .palette-editor .range-group label,
-body.dark-theme .palette-editor .range-group span {
-  color: #ffffff !important;
+body.dark-theme .palette-editor .color-info {
+  background: rgba(0, 0, 0, 0.9);
 }
 
 body.dark-theme .palette-editor .range-group input[type="range"] {
-  background: #374151 !important;
+  background: var(--bg-tertiary);
 }
 
 body.dark-theme .palette-editor .range-group input[type="range"]::-webkit-slider-thumb {
-  background: #818cf8 !important; /* светлее, лучше видно */
+  background: var(--accent-color);
+  border-color: var(--bg-primary);
 }
 
-</style>
-<style>
-/* ========= DARK THEME FIXED ========= */
-/* текст ЧЁРНЫЙ */
-/* фон — мягкий серо-синий, читаемый */
-/*body.dark-theme .palette-editor h1,
-body.dark-theme .palette-editor h2,
-body.dark-theme .palette-editor h3,
-body.dark-theme .palette-editor h4,
-body.dark-theme .palette-editor .element-label {
-  color: #000 !important;
+body.dark-theme .palette-editor .add-canvas-color {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-tertiary);
 }
-*/
 
-/* БЛОКИ */
-body.dark-theme .palette-editor .editor-sidebar,
-body.dark-theme .palette-editor .editor-main,
+body.dark-theme .palette-editor .add-canvas-color:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: var(--bg-secondary);
+}
+
 body.dark-theme .palette-editor .palette-preview {
-  background: #e3e8f0 !important;
-  border-color: #c3ccd8 !important;
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
 }
 
-/* Кнопки выбора палитры */
-body.dark-theme .palette-editor .type-btn {
-  background: #d4dae5 !important;
-  border-color: #b7c0cc !important;
-  color: #000 !important;
+body.dark-theme .palette-editor .element-label {
+  color: var(--text-secondary);
 }
-
-/* active — оставляем красивую подсветку */
-body.dark-theme .palette-editor .type-btn.active {
-  background: linear-gradient(135deg, #8b5cf6, #6366f1) !important;
-  color: white !important;
-}
-
-/* Инфо в карточке цвета остаётся белой для контраста */
-body.dark-theme .palette-editor .color-info {
-  color: #fff !important;
-}
-
-/* Чекбокс */
-body.dark-theme .palette-editor input[type="checkbox"] {
-  accent-color: #6d4dcf !important;
-}
-
-/* ДЕЛАЕМ ТОЛЬКО ЭТОТ ПАРАГРАФ БЕЛЫМ */
-
-body.dark-theme .palette-editor .editor-header p {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-}
-
-body.dark-theme :deep(.palette-editor .editor-header p) {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-}
-
 </style>

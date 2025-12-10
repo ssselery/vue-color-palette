@@ -1,338 +1,289 @@
-<script setup>
-  import { inject } from 'vue'
-
-  const toggleTheme = inject('toggleTheme')
-  const isDarkMode = inject('isDarkMode')
-</script>
-
 <template>
   <header class="header">
     <div class="header-container">
       <!-- Логотип -->
       <div class="logo" @click="goHome">
-        <span class="logo-icon">🎨</span>
-        <span class="logo-text">Palette Generator</span>
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="20" height="20" rx="4" stroke="var(--accent-color)" stroke-width="2"/>
+            <circle cx="8" cy="8" r="2" fill="var(--accent-color)"/>
+            <circle cx="16" cy="8" r="2" fill="var(--accent-color)"/>
+            <circle cx="8" cy="16" r="2" fill="var(--accent-color)"/>
+            <circle cx="16" cy="16" r="2" fill="var(--accent-color)"/>
+          </svg>
+        </div>
+        <h1 class="logo-text">Palette Generator</h1>
       </div>
 
-      <!-- Навигация с 4 ссылками -->
+      <!-- Навигация -->
       <nav class="nav">
         <router-link to="/" class="nav-link" active-class="active" exact>
-          <span class="nav-icon">🎲</span>
           <span class="nav-text">Генератор</span>
         </router-link>
 
         <router-link to="/editor" class="nav-link" active-class="active">
-          <span class="nav-icon">✏️</span>
           <span class="nav-text">Редактор</span>
         </router-link>
 
         <router-link to="/library" class="nav-link" active-class="active">
-          <span class="nav-icon">📚</span>
           <span class="nav-text">Библиотека</span>
         </router-link>
 
         <router-link to="/export" class="nav-link" active-class="active">
-          <span class="nav-icon">📤</span>
           <span class="nav-text">Экспорт</span>
         </router-link>
       </nav>
 
-      <button class="theme-toggle-btn" @click="toggleTheme">
-        <span class="icon">{{ isDarkMode ? '☀️' : '🌙' }}</span>
-        <span>{{ isDarkMode ? 'Светлая' : 'Тёмная' }}</span>
+      <!-- Переключатель темы -->
+      <button class="theme-toggle" @click="toggleTheme" :title="isDarkMode ? 'Включить светлую тему' : 'Включить тёмную тему'">
+        <div class="theme-toggle-inner" :class="{ 'dark': isDarkMode }">
+          <span class="theme-toggle-icon">
+            <svg v-if="!isDarkMode" width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z" fill="currentColor"/>
+              <path d="M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="theme-toggle-text">{{ isDarkMode ? 'Светлая' : 'Тёмная' }}</span>
+        </div>
       </button>
     </div>
   </header>
 </template>
 
-<script>
+<script setup>
+import { inject } from 'vue'
 import { useRouter } from 'vue-router'
 
-export default {
-  name: 'Header',
+const toggleTheme = inject('toggleTheme')
+const isDarkMode = inject('isDarkMode')
+const router = useRouter()
 
-  setup() {
-    const router = useRouter()
-
-    const goHome = () => {
-      router.push('/')
-    }
-
-    return {
-      goHome
-    }
-  }
+const goHome = () => {
+  router.push('/')
 }
 </script>
 
 <style scoped>
-/* Основной контейнер хедера */
+/* ===== ОСНОВНОЙ ХЕДЕР ===== */
 .header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-
-  background: linear-gradient(
-      135deg,
-      var(--bg-secondary) 0%,
-      var(--bg-tertiary) 100%
-  );
-  border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   z-index: 1000;
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid transparent;
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-/* Темная тема */
-dark-theme .header {
-  background: linear-gradient(135deg, rgba(26, 32, 44, 0.98) 0%, rgba(45, 55, 72, 0.98) 100%);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  border-bottom: 1px solid rgba(74, 85, 104, 0.8);
-}
-
-/* Контейнер содержимого */
 .header-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 24px;
-  height: 72px;
+  padding: 0 1.5rem;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 2rem;
 }
 
-/* Логотип */
+@media (max-width: 768px) {
+  .header-container {
+    height: 56px;
+    padding: 0 1rem;
+    gap: 1rem;
+  }
+}
+
+/* ===== ЛОГОТИП ===== */
 .logo {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 0.75rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 8px;
-  border-radius: 12px;
+  transition: opacity 0.2s ease;
   flex-shrink: 0;
 }
 
 .logo:hover {
-  transform: translateY(-2px);
-  background: rgba(102, 126, 234, 0.1);
+  opacity: 0.8;
 }
 
 .logo-icon {
-  font-size: 2.2rem;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
 }
 
 .logo-text {
-  font-size: 1.5rem;
-  font-weight: 900;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f56565 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
-}
-
-dark-theme .logo-text {
-  background: linear-gradient(135deg, #9f7aea 0%, #667eea 50%, #4299e1 100%);
-  text-shadow: 0 2px 10px rgba(159, 122, 234, 0.3);
-}
-
-/* Навигация - убраны все фоны, только текст и иконки */
-.nav {
-  display: flex;
-  gap: 32px;
-  flex: 1;
-  max-width: 600px;
-  justify-content: center;
-}
-
-/* Ссылки навигации - прозрачный фон */
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 0;
-  text-decoration: none;
-  color: #4a5568;
+  font-size: 1.25rem;
   font-weight: 600;
-  font-size: 1.05rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  background: inherit !important; /* Наследуем фон от родителя */
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.025em;
 }
 
-dark-theme .nav-link {
-  color: #cbd5e0;
-}
-
-/* Ховер - только изменение цвета текста */
-.nav-link:hover {
-  color: #667eea;
-  transform: translateY(-2px);
-}
-
-.dark-theme .nav-link:hover {
-  color: #9f7aea;
-}
-
-/* Активная ссылка - подчеркивание и жирный текст */
-.nav-link.active {
-  color: #667eea;
-  font-weight: 700;
-}
-
-.dark-theme .nav-link.active {
-  color: #9f7aea;
-}
-
-/* Подчеркивание для активной ссылки */
-.nav-link.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  border-radius: 2px;
-  animation: slideIn 0.3s ease;
-}
-
-dark-theme .nav-link.active::after {
-  background: linear-gradient(90deg, #9f7aea 0%, #667eea 100%);
-}
-
-@keyframes slideIn {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-.nav-icon {
-  font-size: 1.3rem;
-  transition: transform 0.3s;
-}
-
-.nav-link:hover .nav-icon {
-  transform: scale(1.2) rotate(5deg);
-}
-
-.nav-link.active .nav-icon {
-  transform: scale(1.1);
-}
-
-.nav-text {
-  font-weight: inherit;
-  letter-spacing: 0.3px;
-}
-
-/* Адаптивность */
-@media (max-width: 1200px) {
-  .header-container {
-    gap: 20px;
-    padding: 0 20px;
-  }
-
-  .nav {
-    gap: 24px;
-  }
-
-  .nav-link {
-    font-size: 1rem;
-  }
-}
-
-@media (max-width: 992px) {
-  .header-container {
-    flex-wrap: wrap;
-    height: auto;
-    padding: 16px 20px;
-    gap: 16px;
-  }
-
-  .logo {
-    order: 1;
-  }
-
-  .nav {
-    order: 3;
-    width: 100%;
-    max-width: none;
-    margin-top: 10px;
-    justify-content: space-around;
-    gap: 16px;
-  }
-
+@media (max-width: 640px) {
   .logo-text {
-    font-size: 1.3rem;
+    font-size: 1.125rem;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .logo-text {
     display: none;
   }
+}
 
-  .nav-link {
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 0;
-  }
+/* ===== НАВИГАЦИЯ ===== */
+.nav {
+  display: flex;
+  gap: 2rem;
+  flex: 1;
+  max-width: 500px;
+  justify-content: center;
+}
 
-  .nav-text {
-    font-size: 0.85rem;
-  }
-
-  .nav-icon {
-    font-size: 1.1rem;
+@media (max-width: 768px) {
+  .nav {
+    gap: 1rem;
+    max-width: 400px;
   }
 }
 
-@media (max-width: 576px) {
+@media (max-width: 640px) {
+  .nav {
+    gap: 0.75rem;
+  }
+}
+
+/* Навигационные ссылки */
+.nav-link {
+  position: relative;
+  padding: 0.5rem 0;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: var(--accent-color);
+}
+
+.nav-link.active {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--accent-color);
+  border-radius: 1px;
+}
+
+@media (max-width: 640px) {
+  .nav-link {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-link {
+    font-size: 0.8125rem;
+  }
+}
+
+/* ===== ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ ===== */
+.theme-toggle {
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  opacity: 0.8;
+}
+
+.theme-toggle-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.theme-toggle-inner:hover {
+  background-color: var(--bg-secondary);
+}
+
+.theme-toggle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+}
+
+.theme-toggle-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .theme-toggle-text {
+    display: none;
+  }
+
+  .theme-toggle-inner {
+    padding: 0.5rem;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    justify-content: center;
+  }
+}
+
+/* ===== АДАПТИВНОСТЬ ДЛЯ ОЧЕНЬ МАЛЕНЬКИХ ЭКРАНОВ ===== */
+@media (max-width: 400px) {
   .header-container {
-    padding: 12px 16px;
+    gap: 0.75rem;
   }
 
   .nav {
-    gap: 12px;
+    gap: 0.5rem;
   }
 
   .nav-link {
-    padding: 6px 0;
-  }
-
-  .nav-text {
     font-size: 0.75rem;
   }
 
-  .nav-icon {
-    font-size: 1rem;
+  .theme-toggle-inner {
+    width: 32px;
+    height: 32px;
   }
-}
-
-.theme-toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  cursor: pointer;
-  font-weight: 600;
-  transition: 0.2s;
-}
-
-.theme-toggle-btn:hover {
-  background: var(--bg-secondary);
 }
 </style>

@@ -1,52 +1,73 @@
 <template>
   <div class="export-page">
+    <!-- Заголовок -->
     <div class="page-header">
-      <h1>📤 Экспорт палитр</h1>
-      <p>Конвертируйте ваши палитры в различные форматы для использования в проектах</p>
+      <h1>Экспорт палитр</h1>
+      <p class="page-subtitle">Конвертируйте палитры в различные форматы для использования в проектах</p>
     </div>
 
+    <!-- Основной контейнер -->
     <div class="export-container">
-      <div class="export-sidebar">
-        <h3>Выбор палитры</h3>
-        <div class="palette-selector">
+      <!-- Боковая панель выбора -->
+      <aside class="export-sidebar">
+        <div class="sidebar-header">
+          <h2 class="sidebar-title">Выбор палитры</h2>
+          <button v-if="selectedPalette" @click="clearSelection" class="clear-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Очистить
+          </button>
+        </div>
+
+        <div class="palette-list">
           <div
               v-for="palette in palettes"
               :key="palette.id"
-              class="palette-option"
-              :class="{ active: selectedPalette?.id === palette.id }"
+              class="palette-item"
+              :class="{ 'selected': selectedPalette?.id === palette.id }"
               @click="selectPalette(palette)"
           >
-            <div class="option-colors">
+            <div class="palette-colors">
               <div
                   v-for="(color, index) in palette.colors.slice(0, 5)"
                   :key="index"
-                  class="option-color"
+                  class="palette-color"
                   :style="{ backgroundColor: color }"
-              ></div>
+              />
             </div>
-            <div class="option-name">{{ palette.name }}</div>
+            <div class="palette-info">
+              <h3 class="palette-name">{{ palette.name }}</h3>
+              <span class="palette-count">{{ palette.colors.length }} цветов</span>
+            </div>
           </div>
         </div>
+      </aside>
 
-        <div class="quick-actions">
-          <button @click="clearSelection" class="btn btn-secondary">
-            🗑️ Очистить выбор
-          </button>
-        </div>
-      </div>
-
-      <div class="export-main">
-        <div v-if="!selectedPalette" class="no-selection">
-          <div class="no-selection-illustration">
-            <span class="illustration-icon">🎨</span>
+      <!-- Основной контент -->
+      <main class="export-main">
+        <!-- Состояние без выбора -->
+        <div v-if="!selectedPalette" class="empty-state">
+          <div class="empty-state-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="var(--text-tertiary)" stroke-width="2"/>
+              <rect x="7" y="7" width="10" height="2" fill="var(--accent-color)"/>
+              <rect x="7" y="11" width="8" height="2" fill="var(--accent-color)"/>
+              <rect x="7" y="15" width="6" height="2" fill="var(--accent-color)"/>
+            </svg>
           </div>
-          <h3>Выберите палитру для экспорта</h3>
-          <p>Выберите палитру из списка слева, чтобы увидеть варианты экспорта</p>
+          <h3 class="empty-state-title">Выберите палитру</h3>
+          <p class="empty-state-description">Выберите палитру из списка слева для просмотра вариантов экспорта</p>
         </div>
 
-        <div v-else class="export-options">
-          <div class="selected-palette">
-            <h3>Выбранная палитра: {{ selectedPalette.name }}</h3>
+        <!-- Контент с выбранной палитрой -->
+        <div v-else class="export-content">
+          <!-- Выбранная палитра -->
+          <section class="selected-section">
+            <div class="section-header">
+              <h2 class="section-title">{{ selectedPalette.name }}</h2>
+              <div class="section-badge">{{ selectedPalette.colors.length }} цветов</div>
+            </div>
             <div class="palette-preview">
               <div
                   v-for="(color, index) in selectedPalette.colors"
@@ -55,50 +76,62 @@
                   :style="{ backgroundColor: color }"
                   :title="color"
               >
-                <span class="color-label">{{ color }}</span>
+                <span class="color-hex">{{ color }}</span>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div class="format-options">
-            <h4>Форматы экспорта</h4>
-            <div class="format-grid">
+          <!-- Форматы экспорта -->
+          <section class="formats-section">
+            <h3 class="section-title">Форматы экспорта</h3>
+            <div class="formats-grid">
               <div
                   v-for="format in exportFormats"
                   :key="format.id"
                   class="format-card"
-                  :class="{ active: selectedFormat === format.id }"
+                  :class="{ 'active': selectedFormat === format.id }"
                   @click="selectFormat(format.id)"
               >
-                <div class="format-icon">{{ format.icon }}</div>
+                <div class="format-icon">
+                  <component :is="format.icon" />
+                </div>
                 <div class="format-info">
-                  <h5>{{ format.name }}</h5>
-                  <p>{{ format.description }}</p>
+                  <h4 class="format-name">{{ format.name }}</h4>
+                  <p class="format-desc">{{ format.description }}</p>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div class="export-preview">
-            <h4>Предпросмотр</h4>
-            <div class="preview-container">
-              <pre class="code-preview">{{ previewCode }}</pre>
+          <!-- Предпросмотр кода -->
+          <section class="preview-section">
+            <div class="section-header">
+              <h3 class="section-title">Предпросмотр</h3>
+              <div class="section-actions">
+                <button @click="copyCode" class="action-btn" title="Скопировать код">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+                    <path d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  Копировать
+                </button>
+                <button @click="downloadCode" class="action-btn" title="Скачать файл">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  Скачать
+                </button>
+              </div>
             </div>
 
-            <div class="export-actions">
-              <button @click="copyCode" class="btn btn-primary">
-                📋 Скопировать код
-              </button>
-              <button @click="downloadCode" class="btn btn-success">
-                ⬇️ Скачать файл
-              </button>
-              <button @click="sharePalette" class="btn btn-info">
-                🔗 Поделиться
-              </button>
+            <div class="code-container">
+              <pre class="code-preview"><code>{{ previewCode }}</code></pre>
             </div>
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   </div>
 </template>
@@ -106,8 +139,75 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 
+// Компоненты SVG иконок для форматов
+const CssIcon = {
+  template: `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M4 3L5.777 20.089L12 22L18.223 20.089L20 3H4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M7 7H16.5L15.5 12.5L12 13.5L8.5 12.5L8 9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  `
+}
+
+const ScssIcon = {
+  template: `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M5 19L6.777 3.911L12 2L18.223 3.911L20 19L12 22L5 19Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M12 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M9 8.5L15 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  `
+}
+
+const JsonIcon = {
+  template: `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+      <path d="M8 8H16V16H8V8Z" fill="currentColor"/>
+      <path d="M11 8V16" stroke="var(--bg-primary)" stroke-width="2"/>
+      <path d="M13 8V16" stroke="var(--bg-primary)" stroke-width="2"/>
+    </svg>
+  `
+}
+
+const SwiftIcon = {
+  template: `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M6 18L18 6M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  `
+}
+
+const AndroidIcon = {
+  template: `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+      <rect x="8" y="8" width="8" height="8" fill="currentColor"/>
+    </svg>
+  `
+}
+
+const TailwindIcon = {
+  template: `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M12 6C8.686 6 6 8.686 6 12C6 15.314 8.686 18 12 18C15.314 18 18 15.314 18 12C18 8.686 15.314 6 12 6Z" stroke="currentColor" stroke-width="2"/>
+      <path d="M12 12L15 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12 12L9 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  `
+}
+
 export default {
   name: 'ExportPage',
+  components: {
+    CssIcon,
+    ScssIcon,
+    JsonIcon,
+    SwiftIcon,
+    AndroidIcon,
+    TailwindIcon
+  },
 
   setup() {
     const palettes = ref([])
@@ -115,12 +215,12 @@ export default {
     const selectedFormat = ref('css')
 
     const exportFormats = ref([
-      { id: 'css', name: 'CSS Variables', icon: '🎨', description: 'CSS кастомные свойства' },
-      { id: 'scss', name: 'SCSS Variables', icon: '⚡', description: 'SCSS переменные' },
-      { id: 'tailwind', name: 'Tailwind Config', icon: '🌊', description: 'Конфиг для Tailwind CSS' },
-      { id: 'json', name: 'JSON', icon: '📄', description: 'Стандартный JSON формат' },
-      { id: 'swift', name: 'Swift UI', icon: '📱', description: 'Цвета для iOS приложений' },
-      { id: 'android', name: 'Android XML', icon: '🤖', description: 'Ресурсы для Android' }
+      { id: 'css', name: 'CSS Variables', icon: 'CssIcon', description: 'CSS custom properties' },
+      { id: 'scss', name: 'SCSS Variables', icon: 'ScssIcon', description: 'SCSS variables with preprocessing' },
+      { id: 'tailwind', name: 'Tailwind Config', icon: 'TailwindIcon', description: 'Tailwind CSS configuration' },
+      { id: 'json', name: 'JSON', icon: 'JsonIcon', description: 'Universal JSON format' },
+      { id: 'swift', name: 'Swift', icon: 'SwiftIcon', description: 'SwiftUI color extensions' },
+      { id: 'android', name: 'Android', icon: 'AndroidIcon', description: 'Android XML resources' }
     ])
 
     // Загрузка палитр
@@ -129,16 +229,13 @@ export default {
       if (library) {
         try {
           palettes.value = JSON.parse(library)
-          if (palettes.value.length > 0 && !selectedPalette.value) {
-            selectedPalette.value = palettes.value[0]
-          }
         } catch (e) {
           console.error('Ошибка загрузки палитр:', e)
         }
       }
     }
 
-    // Вычисляемый код для предпросмотра
+    // Предпросмотр кода
     const previewCode = computed(() => {
       if (!selectedPalette.value) return '// Выберите палитру для экспорта'
 
@@ -147,30 +244,15 @@ export default {
 
       switch (selectedFormat.value) {
         case 'css':
-          return `/* CSS Variables for ${selectedPalette.value.name} */
-:root {
+          return `:root {
 ${colors.map((color, i) => `  --${paletteName}-${i + 1}: ${color};`).join('\n')}
-}
-
-/* Usage example */
-.element {
-  background-color: var(--${paletteName}-1);
-  color: var(--${paletteName}-5);
 }`
-
         case 'scss':
-          return `// SCSS Variables for ${selectedPalette.value.name}
-${colors.map((color, i) => `$${paletteName}-${i + 1}: ${color};`).join('\n')}
-
-// Usage example
-.element {
-  background-color: $${paletteName}-1;
-  color: $${paletteName}-5;
-}`
-
+          return `$${paletteName}: (
+${colors.map((color, i) => `  ${i + 1}: ${color},`).join('\n')}
+);`
         case 'tailwind':
-          return `// tailwind.config.js
-module.exports = {
+          return `module.exports = {
   theme: {
     extend: {
       colors: {
@@ -180,39 +262,20 @@ ${colors.map((color, i) => `          ${i + 1}: '${color}',`).join('\n')}
       }
     }
   }
-}
-
-// Usage example
-// class="bg-${paletteName}-1 text-${paletteName}-5"`
-
+}`
         case 'json':
           return JSON.stringify({
             name: selectedPalette.value.name,
-            description: selectedPalette.value.description,
-            colors: selectedPalette.value.colors,
-            tags: selectedPalette.value.tags
+            colors: selectedPalette.value.colors
           }, null, 2)
-
         case 'swift':
-          return `// Swift UI Colors for ${selectedPalette.value.name}
-import SwiftUI
-
-extension Color {
-${colors.map((color, i) => `  static let ${paletteName}${i + 1} = Color(hex: "${color}")`).join('\n')}
-}
-
-// Usage example
-// Text("Hello").foregroundColor(.${paletteName}1)`
-
+          return `extension Color {
+${colors.map((color, i) => `  static let ${paletteName}${i + 1} = Color("${color}")`).join('\n')}
+}`
         case 'android':
-          return `<!-- colors.xml for ${selectedPalette.value.name} -->
-<resources>
+          return `<resources>
 ${colors.map((color, i) => `  <color name="${paletteName}_${i + 1}">${color}</color>`).join('\n')}
-</resources>
-
-<!-- Usage example -->
-<!-- android:background="@color/${paletteName}_1" -->`
-
+</resources>`
         default:
           return '// Неизвестный формат'
       }
@@ -230,7 +293,7 @@ ${colors.map((color, i) => `  <color name="${paletteName}_${i + 1}">${color}</co
     const copyCode = async () => {
       try {
         await navigator.clipboard.writeText(previewCode.value)
-        alert('Код скопирован в буфер обмена!')
+        alert('Код скопирован в буфер обмена')
       } catch (err) {
         console.error('Ошибка копирования:', err)
       }
@@ -248,35 +311,22 @@ ${colors.map((color, i) => `  <color name="${paletteName}_${i + 1}">${color}</co
       URL.revokeObjectURL(url)
     }
 
-    const sharePalette = () => {
-      const url = `${window.location.origin}/palette/${selectedPalette.value.id}`
-      navigator.clipboard.writeText(url)
-          .then(() => alert('Ссылка скопирована в буфер!'))
-          .catch(err => console.error('Ошибка копирования:', err))
-    }
-
-    const importPalette = () => {
-      // В реальном приложении здесь была бы загрузка файла
-      alert('Функция импорта будет реализована позже')
-    }
-
     const clearSelection = () => {
       selectedPalette.value = null
     }
 
     const getFileExtension = () => {
-      switch (selectedFormat.value) {
-        case 'css': return 'css'
-        case 'scss': return 'scss'
-        case 'tailwind': return 'js'
-        case 'json': return 'json'
-        case 'swift': return 'swift'
-        case 'android': return 'xml'
-        default: return 'txt'
+      const extensions = {
+        'css': 'css',
+        'scss': 'scss',
+        'tailwind': 'js',
+        'json': 'json',
+        'swift': 'swift',
+        'android': 'xml'
       }
+      return extensions[selectedFormat.value] || 'txt'
     }
 
-    // Инициализация
     onMounted(() => {
       loadPalettes()
     })
@@ -291,8 +341,6 @@ ${colors.map((color, i) => `  <color name="${paletteName}_${i + 1}">${color}</co
       selectFormat,
       copyCode,
       downloadCode,
-      sharePalette,
-      importPalette,
       clearSelection
     }
   }
@@ -300,194 +348,235 @@ ${colors.map((color, i) => `  <color name="${paletteName}_${i + 1}">${color}</co
 </script>
 
 <style scoped>
+/* ===== БАЗОВЫЕ СТИЛИ ===== */
 .export-page {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 30px 20px;
+  padding: 2rem 1.5rem;
 }
 
+/* ===== ЗАГОЛОВОК СТРАНИЦЫ ===== */
 .page-header {
+  margin-bottom: 3rem;
   text-align: center;
-  margin-bottom: 40px;
 }
 
 .page-header h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #2d3748;
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.75rem 0;
 }
 
-.page-header p {
-  color: #718096;
-  font-size: 1.1rem;
-  max-width: 600px;
+.page-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  max-width: 500px;
   margin: 0 auto;
+  line-height: 1.6;
 }
 
+/* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
 .export-container {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 30px;
+  grid-template-columns: 320px 1fr;
+  gap: 2rem;
   min-height: 600px;
 }
 
 @media (max-width: 1024px) {
   .export-container {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 }
 
+/* ===== БОКОВАЯ ПАНЕЛЬ ===== */
 .export-sidebar {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(226, 232, 240, 0.6);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  height: fit-content;
 }
 
-.export-sidebar h3 {
-  font-size: 1.3rem;
-  color: #2d3748;
-  margin-bottom: 20px;
-  font-weight: 700;
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
 }
 
-.palette-selector {
-  max-height: 400px;
-  overflow-y: auto;
-  margin-bottom: 24px;
+.sidebar-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
 }
 
-.palette-option {
-  padding: 12px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  margin-bottom: 10px;
+.clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s ease;
 }
 
-.palette-option:hover {
-  border-color: #cbd5e0;
+.clear-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.clear-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Список палитр */
+.palette-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.palette-item {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-primary);
+}
+
+.palette-item:hover {
+  border-color: var(--accent-color);
   transform: translateX(4px);
 }
 
-.palette-option.active {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.05);
+.palette-item.selected {
+  border-color: var(--accent-color);
+  background: var(--bg-secondary);
 }
 
-.option-colors {
+.palette-colors {
   display: flex;
-  height: 20px;
-  margin-bottom: 8px;
-  border-radius: 4px;
+  height: 24px;
+  margin-bottom: 0.75rem;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
-.option-color {
+.palette-color {
   flex: 1;
 }
 
-.option-name {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #2d3748;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.quick-actions {
+.palette-info {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.25rem;
 }
 
-.btn {
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.95rem;
+.palette-name {
+  font-size: 0.9375rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
+  color: var(--text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.palette-count {
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+}
+
+/* ===== ОСНОВНОЙ КОНТЕНТ ===== */
+.export-main {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  min-height: 600px;
+}
+
+/* Состояние без выбора */
+.empty-state {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-}
-
-.btn-secondary {
-  background: #e2e8f0;
-  color: #4a5568;
-}
-
-.btn-secondary:hover {
-  background: #cbd5e0;
-  transform: translateY(-2px);
-}
-
-.export-main {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(226, 232, 240, 0.6);
-}
-
-.no-selection {
+  height: 500px;
   text-align: center;
-  padding: 60px 20px;
 }
 
-.no-selection-illustration {
-  margin-bottom: 24px;
+.empty-state-icon {
+  margin-bottom: 1.5rem;
+  color: var(--text-tertiary);
+  opacity: 0.5;
 }
 
-.illustration-icon {
-  font-size: 4rem;
-  opacity: 0.3;
-}
-
-.no-selection h3 {
-  font-size: 1.5rem;
-  color: #4a5568;
-  margin-bottom: 12px;
+.empty-state-title {
+  font-size: 1.25rem;
   font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
 }
 
-.no-selection p {
-  color: #a0aec0;
-  font-size: 1rem;
-  max-width: 400px;
-  margin: 0 auto;
+.empty-state-description {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  max-width: 300px;
+  margin: 0;
+  line-height: 1.5;
 }
 
-.selected-palette {
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e2e8f0;
+/* ===== КОНТЕНТ С ВЫБРАННОЙ ПАЛИТРОЙ ===== */
+.export-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
-.selected-palette h3 {
-  font-size: 1.4rem;
-  color: #2d3748;
-  margin-bottom: 16px;
-  font-weight: 700;
+/* Заголовки секций */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
 }
 
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.section-badge {
+  padding: 0.25rem 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* Превью палитры */
 .palette-preview {
   display: flex;
-  height: 80px;
-  border-radius: 12px;
+  height: 64px;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 .preview-color {
@@ -496,137 +585,196 @@ ${colors.map((color, i) => `  <color name="${paletteName}_${i + 1}">${color}</co
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
-.preview-color:hover .color-label {
+.preview-color:hover {
+  flex: 1.2;
+}
+
+.preview-color:hover .color-hex {
   opacity: 1;
 }
 
-.color-label {
+.color-hex {
+  position: absolute;
+  padding: 0.25rem 0.5rem;
   background: rgba(0, 0, 0, 0.8);
   color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-family: 'Fira Code', monospace;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.2s ease;
   pointer-events: none;
 }
 
-.format-options {
-  margin-bottom: 30px;
-}
-
-.format-options h4 {
-  font-size: 1.2rem;
-  color: #2d3748;
-  margin-bottom: 20px;
-  font-weight: 600;
-}
-
-.format-grid {
+/* ===== ФОРМАТЫ ЭКСПОРТА ===== */
+.formats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  gap: 1rem;
 }
 
 .format-card {
-  padding: 20px;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  transition: all 0.2s ease;
+  background: var(--bg-primary);
 }
 
 .format-card:hover {
-  border-color: #cbd5e0;
-  transform: translateY(-4px);
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
 }
 
 .format-card.active {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.05);
+  border-color: var(--accent-color);
+  background: var(--bg-secondary);
 }
 
 .format-icon {
-  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.75rem;
+  color: var(--text-secondary);
 }
 
-.format-info h5 {
-  font-size: 1rem;
-  color: #2d3748;
-  margin-bottom: 4px;
+.format-card.active .format-icon {
+  color: var(--accent-color);
+}
+
+.format-name {
+  font-size: 0.9375rem;
   font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem 0;
 }
 
-.format-info p {
-  font-size: 0.85rem;
-  color: #718096;
+.format-desc {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0;
   line-height: 1.4;
 }
 
-.export-preview h4 {
-  font-size: 1.2rem;
-  color: #2d3748;
-  margin-bottom: 16px;
-  font-weight: 600;
+/* ===== ПРЕДПРОСМОТР КОДА ===== */
+.section-actions {
+  display: flex;
+  gap: 0.75rem;
 }
 
-.preview-container {
-  background: #1a202c;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.action-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Контейнер с кодом */
+.code-container {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
   overflow: auto;
+  max-height: 300px;
 }
 
 .code-preview {
-  color: #e2e8f0;
-  font-family: 'Fira Code', monospace;
-  font-size: 0.9rem;
-  line-height: 1.5;
   margin: 0;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-primary);
   white-space: pre-wrap;
+  word-break: break-all;
 }
 
-.export-actions {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+.code-preview code {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 768px) {
+  .export-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.9375rem;
+  }
+
+  .export-main,
+  .export-sidebar {
+    padding: 1.25rem;
+  }
+
+  .formats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .section-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
-.btn-primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-}
+@media (max-width: 480px) {
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
 
-.btn-success {
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-  color: white;
-}
+  .empty-state {
+    height: 400px;
+    padding: 1rem;
+  }
 
-.btn-success:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(72, 187, 120, 0.3);
-}
+  .action-btn {
+    padding: 0.5rem;
+  }
 
-.btn-info {
-  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-  color: white;
-}
+  .action-btn span {
+    display: none;
+  }
 
-.btn-info:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(66, 153, 225, 0.3);
+  .action-btn svg {
+    margin: 0;
+  }
 }
 </style>

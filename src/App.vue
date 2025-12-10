@@ -1,6 +1,9 @@
 <template>
   <div id="app" :class="{ 'dark-theme': isDarkMode }">
     <Header />
+
+    <div class="header-spacer"></div>
+
     <main class="app-main">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
@@ -25,10 +28,8 @@
 
     <footer class="app-footer">
       <div class="footer-content">
-        <!-- Лого и описание -->
         <div class="footer-section">
           <div class="footer-logo">
-            <span class="footer-logo-icon">🎨</span>
             <span class="footer-logo-text">Palette Generator</span>
           </div>
           <p class="footer-description">
@@ -37,47 +38,34 @@
           </p>
         </div>
 
-        <!-- Быстрые ссылки (4 штуки) -->
         <div class="footer-section">
-          <h4 class="footer-title">🔗 Навигация</h4>
+          <h4 class="footer-title">Навигация</h4>
           <div class="footer-links">
-            <router-link to="/" class="footer-link">
-              <span class="link-icon">🎲</span>
-              <span>Генератор палитр</span>
-            </router-link>
             <router-link to="/editor" class="footer-link">
-              <span class="link-icon">✏️</span>
               <span>Редактор палитр</span>
             </router-link>
             <router-link to="/library" class="footer-link">
-              <span class="link-icon">📚</span>
               <span>Библиотека палитр</span>
             </router-link>
             <router-link to="/export" class="footer-link">
-              <span class="link-icon">📤</span>
               <span>Экспорт палитр</span>
             </router-link>
           </div>
         </div>
 
-        <!-- Инструменты -->
         <div class="footer-section">
-          <h4 class="footer-title">⚙️ Инструменты</h4>
+          <h4 class="footer-title">Инструменты</h4>
           <div class="footer-links">
             <a href="#" class="footer-link" @click.prevent="exportAllPalettes">
-              <span class="link-icon">💾</span>
               <span>Экспорт всех</span>
             </a>
             <a href="#" class="footer-link" @click.prevent="clearAllData">
-              <span class="link-icon">🗑️</span>
               <span>Очистить всё</span>
             </a>
             <a href="#" class="footer-link" @click.prevent="showHelp">
-              <span class="link-icon">❓</span>
               <span>Помощь</span>
             </a>
             <a href="#" class="footer-link" @click.prevent="toggleTheme">
-              <span class="link-icon">{{ isDarkMode ? '☀️' : '🌙' }}</span>
               <span>{{ isDarkMode ? 'Светлая тема' : 'Тёмная тема' }}</span>
             </a>
           </div>
@@ -250,16 +238,193 @@ export default {
 }
 </script>
 
-<style>
-/* Базовые сбросы */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+<style scoped>
+/* ===== БАЗОВЫЕ СТИЛИ ===== */
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Глобальные переменные для светлой темы */
+/* ===== ОСНОВНОЙ КОНТЕНТ ===== */
+.app-main {
+  flex: 1;
+  padding: 2rem 1.5rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+}
+
+/* ===== АНИМАЦИИ ПЕРЕХОДОВ ===== */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* ===== ФУТЕР ===== */
+.app-footer {
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border-color);
+  padding: 3rem 0 1.5rem;
+  margin-top: auto;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 3rem;
+}
+
+@media (max-width: 1024px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 0 1.5rem;
+  }
+}
+
+/* Логотип и описание */
+.footer-section:first-child {
+  padding-right: 1rem;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.footer-logo-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.footer-description {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  max-width: 320px;
+}
+
+/* Заголовки секций */
+.footer-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Ссылки */
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.footer-link:hover {
+  background: var(--bg-secondary);
+  color: var(--accent-color);
+}
+
+.footer-link.router-link-active {
+  background: var(--accent-color);
+  color: white;
+  font-weight: 500;
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 2rem auto 0;
+  padding: 1.5rem 2rem 0;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.copyright {
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.footer-info {
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+}
+
+.header-spacer {
+  height: 64px;
+}
+
+@media (max-width: 768px) {
+  .header-spacer {
+    height: 56px;
+  }
+}
+</style>
+
+<style>
+/* Глобальные CSS переменные вне scoped блока */
 :root {
+  /* Светлая тема */
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-tertiary: #f1f5f9;
@@ -272,17 +437,17 @@ export default {
   --success-color: #10b981;
   --warning-color: #f59e0b;
   --danger-color: #ef4444;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
-/* Глобальные переменные для тёмной темы */
 .dark-theme {
+  /* Тёмная тема */
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-tertiary: #334155;
@@ -295,217 +460,34 @@ export default {
   --success-color: #34d399;
   --warning-color: #fbbf24;
   --danger-color: #f87171;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.25), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
 }
 
-/* Базовые стили body */
+/* Глобальные стили для body */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  line-height: 1.6;
-  min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Контейнер приложения */
-#app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--bg-primary);
+html {
+  scroll-behavior: smooth;
 }
 
-/* Основной контент */
-.app-main {
-  flex: 1;
-  padding: 30px 20px 40px;
-  max-width: 1400px;
-  margin: 72px auto 0;
-  width: 100%;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* Анимации переходов */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.fade-enter-from {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-/* Стили для футера */
-.app-footer {
-  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-  color: var(--text-secondary);
-  padding: 60px 0 30px;
-  border-top: 1px solid var(--border-color);
-  margin-top: auto;
-}
-
-.footer-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: grid;
-  grid-template-columns: 1.5fr repeat(2, 1fr);
-  gap: 60px;
-  margin-bottom: 40px;
-}
-
-@media (max-width: 1024px) {
-  .footer-content {
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-  }
-}
-
-@media (max-width: 768px) {
-  .footer-content {
-    grid-template-columns: 1fr;
-    gap: 40px;
-    padding: 0 20px;
-  }
-}
-
-/* Логотип в футере */
-.footer-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.footer-logo-icon {
-  font-size: 2.5rem;
-}
-
-.footer-logo-text {
-  font-size: 1.8rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--accent-color) 0%, #8b5cf6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.footer-description {
-  color: var(--text-tertiary);
-  font-size: 1.05rem;
-  line-height: 1.7;
-  margin-bottom: 25px;
-  max-width: 400px;
-}
-
-/* Заголовки секций футера */
-.footer-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 25px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Ссылки в футере */
-.footer-links {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.footer-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-weight: 500;
-  padding: 10px 0;
-  transition: all 0.3s ease;
-  position: relative;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.footer-link:hover {
-  color: var(--accent-color);
-  transform: translateX(8px);
-}
-
-.footer-link.router-link-active {
-  color: var(--accent-color);
-  font-weight: 600;
-}
-
-.link-icon {
-  font-size: 1.2rem;
-  width: 24px;
-  text-align: center;
-}
-
-/* Нижняя часть футера */
-.footer-bottom {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 24px;
-  text-align: center;
-  padding-top: 30px;
-  border-top: 1px solid var(--border-color);
-}
-
-.copyright {
-  color: var(--text-tertiary);
-  font-size: 0.95rem;
-  margin-bottom: 8px;
-}
-
-.footer-info {
-  color: var(--text-tertiary);
-  font-size: 0.9rem;
-  opacity: 0.8;
-}
-
-/* Адаптивность основного контента */
-@media (max-width: 768px) {
-  .app-main {
-    padding: 20px 16px 30px;
-    margin-top: 60px;
-  }
-
-  .footer-content {
-    gap: 30px;
-  }
-
-  .footer-logo-text {
-    font-size: 1.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .app-main {
-    padding: 16px 12px 24px;
-    margin-top: 56px;
-  }
-
-  .footer-content {
-    padding: 0 16px;
-  }
-
-  .footer-logo {
-    flex-direction: column;
-    text-align: center;
-    gap: 8px;
-  }
+.dark-theme {
+  color-scheme: dark;
 }
 </style>

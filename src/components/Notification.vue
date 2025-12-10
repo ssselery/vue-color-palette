@@ -7,12 +7,6 @@
         :class="notification.type"
         @click="removeNotification(notification.id)"
     >
-      <span class="notification-icon">
-        <template v-if="notification.type === 'success'">✅</template>
-        <template v-else-if="notification.type === 'error'">❌</template>
-        <template v-else-if="notification.type === 'warning'">⚠️</template>
-        <template v-else>ℹ️</template>
-      </span>
       <span class="notification-message">{{ notification.message }}</span>
     </div>
   </div>
