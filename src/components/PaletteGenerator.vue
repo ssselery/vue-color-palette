@@ -20,6 +20,20 @@
             </button>
           </div>
         </div>
+
+        <div class="control-group">
+          <label>Формат цвета</label>
+          <div class="number-buttons">
+            <button
+                v-for="format in ['hex', 'rgb', 'hsl']"
+                :key="format"
+                :class="['count-btn', { active: colorFormat === format }]"
+                @click="colorFormat = format"
+            >
+              {{ format.toUpperCase() }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="controls-row">
@@ -56,7 +70,13 @@
         >
           <div class="color-info" :class="{ 'text-dark': !color.isLight, 'text-light': color.isLight }">
             <div class="color-value">
-              {{ colorFormat === 'hex' ? color.hex : color.rgb }}
+              {{
+                colorFormat === 'hex'
+                    ? color.hex
+                    : colorFormat === 'rgb'
+                        ? color.rgb
+                        : color.hsl
+              }}
             </div>
             <div class="color-actions">
               <button
@@ -292,6 +312,11 @@ export default {
 
     const paletteType = ref('random')
 
+    const hexToHslString = (hex) => {
+      const { h, s, l } = hexToHsl(hex)
+      return `hsl(${h}, ${s}%, ${l}%)`
+    }
+
     // Компьютед свойства
     const canSave = computed(() => {
       return currentPalette.value.length > 0
@@ -526,6 +551,7 @@ export default {
       return colors.map(hex => ({
         hex,
         rgb: hexToRgb(hex),
+        hsl: hexToHslString(hex),
         locked: false,
         copied: false,
         isLight: isLightColor(hex)
@@ -563,6 +589,7 @@ export default {
         newPalette.push({
           hex,
           rgb: hexToRgb(hex),
+          hsl: hexToHslString(hex),
           locked: false,
           copied: false,
           isLight: isLightColor(hex)
@@ -574,7 +601,13 @@ export default {
     }
 
     const copyToClipboard = async (color) => {
-      const textToCopy = colorFormat.value === 'hex' ? color.hex : color.rgb
+      const textToCopy =
+          colorFormat.value === 'hex'
+              ? color.hex
+              : colorFormat.value === 'rgb'
+                  ? color.rgb
+                  : color.hsl
+
 
       try {
         await navigator.clipboard.writeText(textToCopy)
@@ -619,6 +652,7 @@ export default {
       currentPalette.value.push({
         hex,
         rgb: hexToRgb(hex),
+        hsl: hexToHslString(hex),
         locked: false,
         copied: false,
         isLight: isLightColor(hex)
@@ -645,6 +679,7 @@ export default {
           const inverted = rgbToHex(255 - rgb[0], 255 - rgb[1], 255 - rgb[2])
           currentPalette.value[index].hex = inverted
           currentPalette.value[index].rgb = hexToRgb(inverted)
+          currentPalette.value[index].hsl = hexToHslString(inverted)
           currentPalette.value[index].isLight = isLightColor(inverted)
         }
       })
@@ -686,6 +721,7 @@ export default {
       currentPalette.value = palette.colors.map(color => ({
         hex: color,
         rgb: hexToRgb(color),
+        hsl: hexToHslString(color),
         locked: false,
         copied: false,
         isLight: isLightColor(color)
@@ -809,9 +845,12 @@ export default {
       const savedCurrent = PaletteStore.getCurrent()
       if (savedCurrent && savedCurrent.length > 0) {
         currentPalette.value = savedCurrent.map(color => ({
-          ...color,
+          hex: color.hex,
+          rgb: color.rgb || hexToRgb(color.hex),
+          hsl: hexToHslString(color.hex),
           locked: false,
-          copied: false
+          copied: false,
+          isLight: typeof color.isLight === 'boolean' ? color.isLight : isLightColor(color.hex),
         }))
       } else {
         generatePalette()
@@ -1765,6 +1804,17 @@ body.dark-theme .stat-label,
   .ph-sidebar {
     width: 100%;
   }
+}
+
+.preview-section.dark-mode .ph-card {
+  background: #111827 !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
+}
+
+.preview-section.dark-mode .ph-sidebar {
+  background: #020617 !important;
+  border-color: #1f2937 !important;
 }
 
 </style>

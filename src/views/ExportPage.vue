@@ -29,9 +29,6 @@
         </div>
 
         <div class="quick-actions">
-          <button @click="importPalette" class="btn btn-secondary">
-            📥 Импорт палитры
-          </button>
           <button @click="clearSelection" class="btn btn-secondary">
             🗑️ Очистить выбор
           </button>

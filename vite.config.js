@@ -4,11 +4,4 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
 	plugins: [vue()],
 	base: '/vue-color-palette/',
-	build: {
-		rollupOptions: {
-			output: {
-				manualChunks: undefined
-			}
-		}
-	}
 })
