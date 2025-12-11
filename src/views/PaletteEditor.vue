@@ -67,6 +67,9 @@
           >
             <div class="color-info">
               <span class="color-hex">{{ color }}</span>
+              <div class="color-hsl" v-if="showDebugInfo">
+                H: {{ getOriginalHsl(index).h }}° S: {{ getOriginalHsl(index).s }}% L: {{ getOriginalHsl(index).l }}%
+              </div>
               <div class="color-actions">
                 <button @click.stop="toggleLock(index)" class="canvas-action-btn" :title="lockedColors[index] ? 'Разблокировать' : 'Заблокировать'">
                   <svg v-if="lockedColors[index]" width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -174,6 +177,8 @@ export default {
     ])
     const lockedColors = ref([false, false, false, false, false])
 
+    const basePaletteColors = ref([...paletteColors.value])
+
     const selectedType = ref({
       id: 'analogous',
       name: 'Аналогичная'
@@ -195,6 +200,8 @@ export default {
     })
 
     const activeColorIndex = ref(null)
+
+    const showDebugInfo = ref(false)
 
     /* ========================
        COLOR GENERATORS
@@ -297,6 +304,31 @@ export default {
       return hslToHex(hsl.h, hsl.s, targetLightness)
     }
 
+    const applyAllSettings = (color) => {
+      let processedColor = color
+
+      if (settings.value.harmony) {
+        if (settings.value.saturation !== 60) {
+          processedColor = adjustSaturation(processedColor, settings.value.saturation)
+        }
+        if (settings.value.lightness !== 50) {
+          processedColor = adjustLightness(processedColor, settings.value.lightness)
+        }
+      }
+
+      if (settings.value.contrast) {
+        const hsl = hexToHsl(processedColor)
+        const contrastAmount = 20
+        if (hsl.l > 60) {
+          processedColor = adjustLightness(processedColor, Math.max(0, hsl.l - contrastAmount))
+        } else {
+          processedColor = adjustLightness(processedColor, Math.min(100, hsl.l + contrastAmount))
+        }
+      }
+
+      return processedColor
+    }
+
     /* ========================
        PROCESS COLOR
     =========================== */
@@ -322,15 +354,14 @@ export default {
     =========================== */
 
     const generatePalette = () => {
+      console.log('Generating new palette of type:', selectedType.value.id)
 
       const generateRandomBaseColor = () => randomHex()
 
       let base
       if (selectedType.value.id === 'random') {
-        // Для случайной палитры base не используется, но на всякий случай
         base = generateRandomBaseColor()
       } else {
-        // Для всех остальных типов используем случайный цвет как базу
         base = generateRandomBaseColor()
       }
 
@@ -338,7 +369,6 @@ export default {
       const type = selectedType.value.id
 
       if (type === 'analogous') {
-        // Аналогичная: цвета с шагом 30 градусов
         result.push(base)
         result.push(shiftHue(base, 30))
         result.push(shiftHue(base, 60))
@@ -346,15 +376,13 @@ export default {
         result.push(shiftHue(base, 120))
 
       } else if (type === 'monochromatic') {
-        // Монохромная: разные оттенки яркости
-        result.push(adjustLightness(base, 80)) // самый светлый
+        result.push(adjustLightness(base, 80))
         result.push(adjustLightness(base, 60))
-        result.push(base) // базовый
+        result.push(base)
         result.push(adjustLightness(base, 40))
-        result.push(adjustLightness(base, 20)) // самый темный
+        result.push(adjustLightness(base, 20))
 
       } else if (type === 'triadic') {
-        // Триадная: 120 градусов
         result.push(base)
         result.push(shiftHue(base, 120))
         result.push(shiftHue(base, 240))
@@ -362,34 +390,83 @@ export default {
         result.push(adjustLightness(base, 30))
 
       } else if (type === 'complementary') {
-        // Комплементарная: противоположные + соседние
         result.push(base)
-        result.push(shiftHue(base, 180)) // противоположный
-        result.push(shiftHue(base, 150)) // смежный
-        result.push(shiftHue(base, 210)) // смежный
-        result.push(adjustLightness(base, 70)) // светлый вариант
+        result.push(shiftHue(base, 180))
+        result.push(shiftHue(base, 150))
+        result.push(shiftHue(base, 210))
+        result.push(adjustLightness(base, 70))
 
       } else if (type === 'random') {
-        // Случайная
         for (let i = 0; i < 5; i++) {
           result.push(randomHex())
         }
       }
 
-      // Применяем настройки к каждому цвету (кроме заблокированных)
-      paletteColors.value = result.map((color, i) => {
+      // Сохраняем базовые цвета
+      basePaletteColors.value = [...result]
+
+      // Применяем настройки к новым цветам
+      applySettingsToNewPalette(result)
+    }
+
+    const applySettingsToNewPalette = (newColors) => {
+      paletteColors.value = newColors.map((color, i) => {
         if (lockedColors.value[i] && i < paletteColors.value.length) {
           return paletteColors.value[i]
         }
+        return applyAllSettings(color)
+      })
+    }
 
-        // Применяем контраст если включен
+    const applySettings = () => {
+      console.log('Applying settings to current palette', {
+        saturation: settings.value.saturation,
+        lightness: settings.value.lightness,
+        harmony: settings.value.harmony,
+        contrast: settings.value.contrast
+      })
+
+      // Применяем настройки только к текущим базовым цветам
+      paletteColors.value = basePaletteColors.value.map((color, index) => {
+        if (lockedColors.value[index]) return paletteColors.value[index]
+
         let processedColor = color
+
+        // Если гармония выключена, оставляем оригинальный цвет (или применяем только контраст)
+        if (!settings.value.harmony) {
+          // Если гармония выключена, но контраст включен
+          if (settings.value.contrast) {
+            const hsl = hexToHsl(processedColor)
+            const contrastAmount = 20
+            if (hsl.l > 60) {
+              processedColor = adjustLightness(processedColor, Math.max(0, hsl.l - contrastAmount))
+            } else {
+              processedColor = adjustLightness(processedColor, Math.min(100, hsl.l + contrastAmount))
+            }
+          }
+          return processedColor
+        }
+
+        // ГАРМОНИЯ ВКЛЮЧЕНА: применяем насыщенность и яркость
+
+        // Важно: сначала получаем оригинальный цвет из basePaletteColors
+        const originalColor = basePaletteColors.value[index]
+        let tempColor = originalColor
+
+        // Шаг 1: Применяем насыщенность
+        tempColor = adjustSaturation(originalColor, settings.value.saturation)
+
+        // Шаг 2: Применяем яркость к цвету с УЖЕ ПРИМЕНЕННОЙ насыщенностью
+        processedColor = adjustLightness(tempColor, settings.value.lightness)
+
+        // Шаг 3: Применяем контраст (если включен)
         if (settings.value.contrast) {
           const hsl = hexToHsl(processedColor)
+          const contrastAmount = 20
           if (hsl.l > 60) {
-            processedColor = adjustLightness(processedColor, Math.max(0, hsl.l - 20))
+            processedColor = adjustLightness(processedColor, Math.max(0, hsl.l - contrastAmount))
           } else {
-            processedColor = adjustLightness(processedColor, Math.min(100, hsl.l + 20))
+            processedColor = adjustLightness(processedColor, Math.min(100, hsl.l + contrastAmount))
           }
         }
 
@@ -397,26 +474,9 @@ export default {
       })
     }
 
-    const applySettings = () => {
-      if (settings.value.autoRegenerate) {
-        generatePalette()
-      } else {
-        // Применяем настройки только к текущей палитре
-        paletteColors.value = paletteColors.value.map(color => {
-          let newColor = color
-          if (settings.value.saturation !== 60) {
-            newColor = adjustSaturation(newColor, settings.value.saturation)
-          }
-          if (settings.value.lightness !== 50) {
-            newColor = adjustLightness(newColor, settings.value.lightness)
-          }
-          return newColor
-        })
-      }
+    const getOriginalHsl = (index) => {
+      return hexToHsl(basePaletteColors.value[index])
     }
-
-    /* AUTO REGENERATE */
-    watch(settings, generatePalette, { deep: true })
 
     const selectPaletteType = (type) => {
       selectedType.value = type
@@ -427,7 +487,11 @@ export default {
        COLOR PICKER
     =========================== */
 
-    const openColorPicker = index => activeColorIndex.value = index
+    const openColorPicker = index => {
+      activeColorIndex.value = index
+      // При открытии пикера сохраняем текущий цвет как базовый
+      basePaletteColors.value[index] = paletteColors.value[index]
+    }
     const closeColorPicker = () => activeColorIndex.value = null
 
     /* ========================
@@ -435,24 +499,39 @@ export default {
     =========================== */
 
     const addColor = () => {
-      paletteColors.value.push(randomHex())
+      const newColor = randomHex()
+      paletteColors.value.push(newColor)
+      basePaletteColors.value.push(newColor)
       lockedColors.value.push(false)
     }
 
     const removeColor = index => {
       paletteColors.value.splice(index, 1)
+      basePaletteColors.value.splice(index, 1)
       lockedColors.value.splice(index, 1)
     }
 
     const toggleLock = index => {
       lockedColors.value[index] = !lockedColors.value[index]
+
+      // Когда цвет блокируется, сохраняем его текущее состояние как базовый
+      if (lockedColors.value[index]) {
+        basePaletteColors.value[index] = paletteColors.value[index]
+      }
     }
 
     const resetPalette = () => {
       baseColor.value = '#667eea'
       paletteColors.value = ['#667eea','#764ba2','#f56565','#48bb78','#ed8936']
+      basePaletteColors.value = ['#667eea','#764ba2','#f56565','#48bb78','#ed8936']
       lockedColors.value = [false,false,false,false,false]
       selectedType.value = paletteTypes[0]
+      settings.value = {
+        harmony: true,
+        contrast: true,
+        saturation: 60,
+        lightness: 50
+      }
     }
 
     const savePalette = () => {
@@ -493,6 +572,7 @@ export default {
       paletteTypes,
       settings,
       activeColorIndex,
+      showDebugInfo,
 
       selectPaletteType,
       generatePalette,
@@ -505,7 +585,8 @@ export default {
 
       openColorPicker,
       closeColorPicker,
-      applySettings
+      applySettings,
+      getOriginalHsl
     }
   }
 }
@@ -935,6 +1016,14 @@ export default {
     padding: 0.25rem;
     font-size: 0.75rem;
   }
+}
+
+.color-hsl {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-top: 2px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  color: white;
 }
 </style>
 

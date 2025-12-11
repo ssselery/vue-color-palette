@@ -55,7 +55,7 @@
                 @click="generateFromBaseColor"
                 class="action-btn secondary small"
             >
-              Применить
+              Сгенерировать
             </button>
           </div>
         </div>
@@ -700,27 +700,132 @@ export default {
     }
 
     // Генерация на основе базового цвета
+    // Генерация на основе базового цвета
+    // Заменяем функцию generateFromBaseColor на эту:
     const generateFromBaseColor = () => {
-      if (paletteType.value === 'random') {
-        generatePalette()
-        return
-      }
+      console.log('generateFromBaseColor called', {
+        baseColor: baseColor.value,
+        paletteType: paletteType.value,
+        colorCount: colorCount.value
+      })
 
+      // Оставляем заблокированные цвета
       const lockedColors = currentPalette.value.filter(color => color.locked)
-      const newPalette = generateHarmoniousPalette(paletteType.value, baseColor.value)
+      console.log('Locked colors:', lockedColors.length)
 
-      // Сохраняем заблокированные цвета
-      if (lockedColors.length > 0) {
-        const lockedHexes = new Set(lockedColors.map(c => c.hex))
-        const filteredNew = newPalette.filter(color => !lockedHexes.has(color.hex))
-        currentPalette.value = [...lockedColors, ...filteredNew.slice(0, colorCount.value - lockedColors.length)]
-      } else {
-        currentPalette.value = newPalette.slice(0, colorCount.value)
+      // Создаем объект базового цвета
+      const baseColorObj = {
+        hex: baseColor.value,
+        rgb: hexToRgb(baseColor.value),
+        hsl: hexToHslString(baseColor.value),
+        locked: false,
+        copied: false,
+        isLight: isLightColor(baseColor.value)
       }
 
-      notify.success(`Палитра "${getPaletteTypeName(paletteType.value)}" сгенерирована!`)
+      console.log('Base color object:', baseColorObj)
+
+      // Генерируем новую палитру в зависимости от типа
+      let newColors = []
+
+      if (paletteType.value === 'random') {
+        // Для случайной палитры - генерируем разнообразные цвета
+        const baseHsl = hexToHsl(baseColor.value)
+
+        // Первый цвет всегда базовый
+        newColors.push(baseColorObj)
+
+        // Генерируем остальные цвета с вариациями
+        for (let i = 1; i < colorCount.value; i++) {
+          let newHue, newSat, newLight
+
+          // Разнообразные стратегии генерации
+          if (i % 3 === 0) {
+            // Аналогичные цвета (+30 градусов)
+            newHue = (baseHsl.h + i * 30) % 360
+            newSat = Math.min(100, Math.max(30, baseHsl.s + (Math.random() * 20 - 10)))
+            newLight = Math.min(90, Math.max(20, baseHsl.l + (Math.random() * 30 - 15)))
+          } else if (i % 3 === 1) {
+            // Комплементарные вариации
+            newHue = (baseHsl.h + 180 + (Math.random() * 60 - 30)) % 360
+            newSat = Math.min(100, Math.max(40, baseHsl.s + (Math.random() * 30 - 15)))
+            newLight = Math.min(85, Math.max(25, baseHsl.l + (Math.random() * 40 - 20)))
+          } else {
+            // Полностью случайные с ограничениями
+            newHue = (baseHsl.h + 90 + (Math.random() * 180 - 90)) % 360
+            newSat = 30 + Math.random() * 70
+            newLight = 25 + Math.random() * 60
+          }
+
+          const newHex = hslToHex(newHue, newSat, newLight)
+          newColors.push({
+            hex: newHex,
+            rgb: hexToRgb(newHex),
+            hsl: `hsl(${Math.round(newHue)}, ${Math.round(newSat)}%, ${Math.round(newLight)}%)`,
+            locked: false,
+            copied: false,
+            isLight: isLightColor(newHex)
+          })
+        }
+      } else {
+        // Для гармоничных палитр используем существующую логику
+        const tempPaletteType = paletteType.value === 'random' ? 'analogous' : paletteType.value
+        console.log('Using palette type for harmonious:', tempPaletteType)
+
+        const harmoniousPalette = generateHarmoniousPalette(tempPaletteType, baseColor.value)
+        newColors = harmoniousPalette.map(color => ({
+          ...color,
+          locked: false,
+          copied: false
+        }))
+      }
+
+      console.log('Generated colors:', newColors.map(c => c.hex))
+
+      // Начинаем с базового цвета
+      const finalPalette = [baseColorObj]
+      console.log('Final palette starts with base:', finalPalette[0].hex)
+
+      // Добавляем заблокированные цвета (кроме базового, если он заблокирован)
+      const lockedWithoutBase = lockedColors.filter(c => c.hex !== baseColor.value)
+      if (lockedWithoutBase.length > 0) {
+        finalPalette.push(...lockedWithoutBase)
+        console.log('Added locked colors:', lockedWithoutBase.map(c => c.hex))
+      }
+
+      // Добавляем остальные цвета из новой палитры, исключая дубликаты
+      const usedHexes = new Set(finalPalette.map(c => c.hex))
+
+      // Исключаем базовый цвет из новых цветов (он уже есть первым)
+      const otherColors = newColors
+          .filter(color => color.hex !== baseColor.value)
+          .filter(color => !usedHexes.has(color.hex))
+
+      console.log('Other colors available:', otherColors.map(c => c.hex))
+
+      // Заполняем до нужного количества
+      const remainingSlots = colorCount.value - finalPalette.length
+      console.log('Remaining slots:', remainingSlots)
+
+      if (remainingSlots > 0) {
+        const toAdd = otherColors.slice(0, remainingSlots)
+        finalPalette.push(...toAdd)
+        console.log('Added colors:', toAdd.map(c => c.hex))
+      }
+
+      console.log('Final palette before slice:', finalPalette.map(c => c.hex))
+      currentPalette.value = finalPalette.slice(0, colorCount.value)
+      console.log('Current palette after update:', currentPalette.value.map(c => c.hex))
+
+      const paletteName = paletteType.value === 'random' ? 'Случайная' : getPaletteTypeName(paletteType.value)
+      notify.success(`Палитра "${paletteName}" сгенерирована!`)
     }
 
+// Также добавьте в computed секцию для отображения названия типа палитры в кнопке:
+    const paletteButtonText = computed(() => {
+      if (paletteType.value === 'random') return 'Случайная'
+      return `Сгенерировать (${getPaletteTypeName(paletteType.value)})`
+    })
     // Название типа палитры
     const getPaletteTypeName = (type) => {
       const typeObj = paletteTypes.value.find(t => t.value === type)
