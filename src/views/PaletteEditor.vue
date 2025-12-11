@@ -179,6 +179,8 @@ export default {
 
     const basePaletteColors = ref([...paletteColors.value])
 
+    const generationBaseColor = ref(null)
+
     const selectedType = ref({
       id: 'analogous',
       name: 'Аналогичная'
@@ -356,65 +358,103 @@ export default {
     const generatePalette = () => {
       console.log('Generating new palette of type:', selectedType.value.id)
 
-      const generateRandomBaseColor = () => randomHex()
+      // Получаем базовый цвет для генерации
+      const baseHex = getGenerationBaseColor()
+      const baseHsl = hexToHsl(baseHex)
 
-      let base
-      if (selectedType.value.id === 'random') {
-        base = generateRandomBaseColor()
-      } else {
-        base = generateRandomBaseColor()
-      }
+      console.log('Base color for generation:', {
+        hex: baseHex,
+        hsl: baseHsl
+      })
 
       const result = []
       const type = selectedType.value.id
+      const N = paletteColors.value.length // Текущее количество цветов
 
       if (type === 'analogous') {
-        result.push(base)
-        result.push(shiftHue(base, 30))
-        result.push(shiftHue(base, 60))
-        result.push(shiftHue(base, 90))
-        result.push(shiftHue(base, 120))
+        // Аналогичная: цвета с шагом 30 градусов
+        for (let i = 0; i < N; i++) {
+          const hue = (baseHsl.h + i * 30) % 360
+          result.push(hslToHex(hue, baseHsl.s, baseHsl.l))
+        }
 
       } else if (type === 'monochromatic') {
-        result.push(adjustLightness(base, 80))
-        result.push(adjustLightness(base, 60))
-        result.push(base)
-        result.push(adjustLightness(base, 40))
-        result.push(adjustLightness(base, 20))
+        // Монохромная: разные оттенки яркости
+        for (let i = 0; i < N; i++) {
+          // Равномерно распределяем яркость от 20 до 80
+          const lightness = 20 + (i * 60 / Math.max(1, N - 1))
+          result.push(hslToHex(baseHsl.h, baseHsl.s, Math.min(100, Math.max(0, lightness))))
+        }
 
       } else if (type === 'triadic') {
-        result.push(base)
-        result.push(shiftHue(base, 120))
-        result.push(shiftHue(base, 240))
-        result.push(adjustLightness(base, 70))
-        result.push(adjustLightness(base, 30))
+        // Триадная: 120 градусов
+        for (let i = 0; i < N; i++) {
+          const hue = (baseHsl.h + i * 120) % 360
+          // Чередуем яркость для разнообразия
+          const lightness = i % 2 === 0 ? baseHsl.l : Math.min(100, baseHsl.l + 20)
+          result.push(hslToHex(hue, baseHsl.s, lightness))
+        }
 
       } else if (type === 'complementary') {
-        result.push(base)
-        result.push(shiftHue(base, 180))
-        result.push(shiftHue(base, 150))
-        result.push(shiftHue(base, 210))
-        result.push(adjustLightness(base, 70))
+        // Комплементарная: противоположные + соседние
+        for (let i = 0; i < N; i++) {
+          if (i === 0) {
+            result.push(baseHex) // Первый цвет - базовый
+          } else if (i === 1) {
+            // Второй - противоположный
+            result.push(hslToHex((baseHsl.h + 180) % 360, baseHsl.s, baseHsl.l))
+          } else {
+            // Остальные - смежные цвета
+            const offset = i % 2 === 0 ? 30 : -30
+            const hue = (baseHsl.h + offset * Math.floor(i / 2)) % 360
+            result.push(hslToHex(hue, baseHsl.s, baseHsl.l))
+          }
+        }
 
       } else if (type === 'random') {
-        for (let i = 0; i < 5; i++) {
-          result.push(randomHex())
+        // Случайная палитра на основе базового цвета
+        for (let i = 0; i < N; i++) {
+          if (i === 0) {
+            result.push(baseHex)
+          } else {
+            const hue = (baseHsl.h + Math.random() * 120 - 60) % 360
+            const sat = Math.min(100, Math.max(30, baseHsl.s + Math.random() * 40 - 20))
+            const light = Math.min(90, Math.max(20, baseHsl.l + Math.random() * 40 - 20))
+            result.push(hslToHex(hue, sat, light))
+          }
         }
       }
 
-      // Сохраняем базовые цвета
-      basePaletteColors.value = [...result]
+      console.log('Generated colors before settings:', result)
 
-      // Применяем настройки к новым цветам
+      // Сохраняем базовые цвета только для незаблокированных позиций
+      for (let i = 0; i < N; i++) {
+        if (!lockedColors.value[i]) {
+          basePaletteColors.value[i] = result[i]
+        }
+      }
+
+      // Применяем настройки к новой палитре
       applySettingsToNewPalette(result)
     }
 
     const applySettingsToNewPalette = (newColors) => {
+      console.log('Applying settings to new palette:', {
+        newColors,
+        locked: lockedColors.value
+      })
+
       paletteColors.value = newColors.map((color, i) => {
-        if (lockedColors.value[i] && i < paletteColors.value.length) {
+        if (lockedColors.value[i]) {
+          // Для заблокированных цветов сохраняем текущее значение
+          console.log(`Color ${i} is locked, keeping:`, paletteColors.value[i])
           return paletteColors.value[i]
         }
-        return applyAllSettings(color)
+
+        // Для остальных применяем настройки
+        const processedColor = applyAllSettings(color)
+        console.log(`Color ${i} processed:`, color, '->', processedColor)
+        return processedColor
       })
     }
 
@@ -489,8 +529,10 @@ export default {
 
     const openColorPicker = index => {
       activeColorIndex.value = index
-      // При открытии пикера сохраняем текущий цвет как базовый
-      basePaletteColors.value[index] = paletteColors.value[index]
+      // При открытии пикера обновляем базовый цвет для генерации
+      if (lockedColors.value[index]) {
+        generationBaseColor.value = paletteColors.value[index]
+      }
     }
     const closeColorPicker = () => activeColorIndex.value = null
 
@@ -499,7 +541,17 @@ export default {
     =========================== */
 
     const addColor = () => {
-      const newColor = randomHex()
+      // При добавлении цвета используем текущий базовый цвет
+      const baseHsl = generationBaseColor.value
+          ? hexToHsl(generationBaseColor.value)
+          : hexToHsl('#667eea')
+
+      const newColor = hslToHex(
+          (baseHsl.h + Math.random() * 60 - 30) % 360,
+          baseHsl.s,
+          baseHsl.l
+      )
+
       paletteColors.value.push(newColor)
       basePaletteColors.value.push(newColor)
       lockedColors.value.push(false)
@@ -512,11 +564,20 @@ export default {
     }
 
     const toggleLock = index => {
-      lockedColors.value[index] = !lockedColors.value[index]
+      const wasLocked = lockedColors.value[index]
+      lockedColors.value[index] = !wasLocked
 
-      // Когда цвет блокируется, сохраняем его текущее состояние как базовый
-      if (lockedColors.value[index]) {
+      if (!wasLocked) {
+        // Когда цвет блокируется, сохраняем его как базовый для генерации
+        generationBaseColor.value = paletteColors.value[index]
+        // Сохраняем его текущее состояние как базовый (без настроек)
         basePaletteColors.value[index] = paletteColors.value[index]
+      } else {
+        // Когда цвет разблокируется, сбрасываем базовый цвет для генерации
+        // если не осталось заблокированных цветов
+        if (!lockedColors.value.some(locked => locked)) {
+          generationBaseColor.value = null
+        }
       }
     }
 
@@ -525,6 +586,7 @@ export default {
       paletteColors.value = ['#667eea','#764ba2','#f56565','#48bb78','#ed8936']
       basePaletteColors.value = ['#667eea','#764ba2','#f56565','#48bb78','#ed8936']
       lockedColors.value = [false,false,false,false,false]
+      generationBaseColor.value = null // Сбрасываем базовый цвет для генерации
       selectedType.value = paletteTypes[0]
       settings.value = {
         harmony: true,
@@ -532,6 +594,27 @@ export default {
         saturation: 60,
         lightness: 50
       }
+    }
+
+    const getGenerationBaseColor = () => {
+      // Если есть заблокированные цвета, используем первый из них
+      for (let i = 0; i < lockedColors.value.length; i++) {
+        if (lockedColors.value[i]) {
+          console.log('Using locked color as generation base:', paletteColors.value[i])
+          return paletteColors.value[i]
+        }
+      }
+
+      // Если нет заблокированных цветов, но есть сохраненный базовый
+      if (generationBaseColor.value) {
+        console.log('Using saved generation base:', generationBaseColor.value)
+        return generationBaseColor.value
+      }
+
+      // Иначе генерируем случайный
+      const randomColor = randomHex()
+      console.log('Using random color as base:', randomColor)
+      return randomColor
     }
 
     const savePalette = () => {
@@ -573,6 +656,7 @@ export default {
       settings,
       activeColorIndex,
       showDebugInfo,
+      generationBaseColor,
 
       selectPaletteType,
       generatePalette,
